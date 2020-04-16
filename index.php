@@ -9,6 +9,5 @@
 </head>
 <body>
     <h1>Book management system</h1>
-    <h3>from zkwong</h3>
 </body>
 </html>
