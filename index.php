@@ -8,6 +8,11 @@
     <title>Book Management System</title>
 </head>
 <body>
-    <h1>Book management system</h1>
+    <!-- Authenticate user -->
+    <?php
+        include __DIR__."/authenticate.php";
+        authenticate();
+    ?>
+    <h1>Book management system index</h1>
 </body>
 </html>
