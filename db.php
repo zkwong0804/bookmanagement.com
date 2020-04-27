@@ -17,38 +17,216 @@ class Db {
         }
     }
 
-    function getUser($userid, $password) {
+    function checkConnection() {
         GLOBAL $conn;
+        $exist = false;
         if (!isset($conn)) {
             $this->getConnection();
-        }
-        $q = "SELECT * FROM Person WHERE id='"
-            .$userid."' AND password='".$password."';";
-        $result = $conn->query($q);
-        if($result->num_rows > 0) {
-            while($row = $result->fetch_assoc()) {
-                $q = "SELECT p.*, l.* FROM Person p "
-                ."INNER JOIN Librarian l "
-                ."ON p.id = l.pID WHERE p.id='".$row["id"]
-                ."' AND p.password='".$row["password"]."'";
-                $result2 = $conn->query($q);
-                while($row = $result->fetch_assoc()) {
-                    $login_user = new Librarian(
-                        $row["id"], $row["name"], 
-                        $row["password"], $row["startYear"], 
-                        $row["exist"]
-                    );
-                    echo $login_user->getName();
-                }
-            }
-        } else {
-            echo $q;
-            include __DIR__."/login.php";
         }
     }
 
     function close() {
-        echo "close db connection";
+        GLOBAL $conn;
+        $this->checkConnection();
+        $conn->close();
+    }
+
+    function userExist($userid, $password) {
+        GLOBAL $conn;
+        $this->checkConnection();
+        $exist = false;
+        $q = "SELECT * FROM Person WHERE id='"
+            .$userid."' AND password='".$password."';";
+        $result = $conn->query($q);
+        if($result->num_rows > 0) {
+            $exist = true;
+        }
+
+        return $exist;
+    }
+
+    function getUser($id) {
+        GLOBAL $conn;
+        $this->checkConnection();
+        $user = null;
+        $q = "SELECT p.*, l.* FROM Person p "
+        ."INNER JOIN Librarian l "
+        ."ON p.id = l.pID WHERE p.id='".$id."';";
+        $result = $conn->query($q);
+        if ($result->num_rows > 0) {
+            while($row = $result->fetch_assoc()) {
+                $user = new Librarian(
+                    $row["id"], $row["name"], 
+                    $row["password"], $row["startYear"], 
+                    $row["exist"]
+                );
+            }
+        }
+
+        return $user;
+    }
+
+    function insertLibrarian($name, $pass) {
+        GLOBAL $conn;
+        $this->checkConnection();
+        $q = "CALL InsertLibrarian('".$name."','".$pass."');";
+        $result = $conn->query($q);
+        if ($result==1) return true;
+        return false;
+    }
+
+    function insertMember($name, $pass) {
+        GLOBAL $conn;
+        $this->checkConnection();
+        $q = "CALL InsertMember('".$name."','".$pass."');";
+        $result = $conn->query($q);
+        if ($result==1) return true;
+        return false;
+    }
+
+    function checkMemberExistence($id) {
+        GLOBAL $conn;
+        $exist = false;
+        $this->checkConnection();
+        $q = "SELECT pID FROM Member WHERE pID='".$id."';";
+        $result = $conn->query($q);
+        if ($result->num_rows == 1) {
+            $exist = true;
+        } else {
+            $exist = false;
+        }
+
+        $this->close();
+        return $exist;
+    }
+
+    function checkMemberExistence_pass($id, $pass) {
+        GLOBAL $conn;
+        $exist = false;
+        $this->checkConnection();
+        $q = "SELECT id FROM Person WHERE id='".$id."' AND password='".$pass."';";
+        $result = $conn->query($q);
+        if ($result->num_rows == 1) {
+            $exist = true;
+        } else {
+            $exist = false;
+        }
+
+        $this->close();
+        return $exist;
+    }
+
+    function renewMembership($id) {
+        GLOBAL $conn;
+        $this->checkConnection();
+        $success = false;
+        $q = "UPDATE Member ".
+        "SET membershipExpire=ADDDATE(CURDATE(), INTERVAL 1 YEAR)".
+        "WHERE pID='".$id."';";
+        $result = $conn->query($q);
+        if ($result == 1) return true;
+        else return false;
+    }
+
+    function insertBook($title, $author, $genre, $total) {
+        GLOBAL $conn;
+        $this->checkConnection();
+        $success = false;
+        $q = "CALL InsertBook('".$title."','".$author."','".$genre."');";
+        for ($i=0; $i<$total; $i++) {
+            if ($conn->query($q) == 1) {
+                $success = true;
+            }
+        }
+
+        $this->close();
+
+        return $success;
+    }
+
+    function borrowBook($bookID, $memID) {
+        GLOBAL $conn;
+        $this->checkConnection();
+        $success  = false;
+        $q = "INSERT INTO BorrowedBooks VALUES(UUID(), '"
+            .$bookID."', '".$memID
+            ."', CURDATE(), "
+            ."ADDDATE(CURDATE(), INTERVAL 1 MONTH), false);";
+
+        if ($conn->query($q) == 1) {
+            $success = true;
+        }
+
+        return $success;
+    }
+
+    function returnBook($returnID) {
+        GLOBAL $conn;
+        $this->checkConnection();
+        $success = false;
+        $q = "UPDATE BorrowedBooks SET isReturn=true WHERE id='".
+        $returnID."';";
+        if ($conn->query($q) == 1) {
+            $success = true;
+        }
+
+        $this->close();
+        return $success;
+    }
+
+    function extendExpire($returnID) {
+        GLOBAL $conn;
+        $this->checkConnection();
+        $success = false;
+        $q = "UPDATE BorrowedBooks SET ".
+        "expireDate=ADDDATE(expireDate, INTERVAL 3 WEEK) ".
+        "WHERE id='".$returnID."';";
+        if ($conn->query($q) == 1) {
+            $success = true;
+        }
+
+        $this->close();
+        return $success;
+    }
+
+    function checkReturnExistence($id) {
+        GLOBAL $conn;
+        $exist = false;
+        $this->checkConnection();
+        $q = "SELECT id FROM BorrowedBooks WHERE id='".$id.
+        "' AND isReturn=false;";
+        $result = $conn->query($q);
+        if ($result->num_rows == 1) {
+            $exist = true;
+        } else {
+            $exist = false;
+        }
+
+        $this->close();
+        return $exist;
+    }
+
+    function getPenalties($memID) {
+        GLOBAL $conn;
+        $this->checkConnection();
+        $q = "SELECT p.id AS 'pID', ".
+        "p.reason AS 'reason', p.fees AS 'fees', ".
+        "B.title AS 'book' FROM Penalties p ".
+        "INNER JOIN BorrowedBooks b ON p.record=b.id ".
+        "INNER JOIN Book B ON b.book=B.id ".
+        "WHERE b.borrower='".$memID."' AND p.isPaid=false;";
+        $penalties = [];
+        $result = $conn->query($q);
+        while($row = $result->fetch_assoc()) {
+            array_push($penalties, array(
+                "id" => $row["pID"],
+                "fees" => $row["fees"],
+                "reason" => $row["reason"],
+                "book" => $row["book"]
+            ));
+        }
+        $this->close();
+        return $penalties;
     }
 }
 ?>
