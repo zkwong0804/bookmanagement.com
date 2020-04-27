@@ -10,7 +10,7 @@ if ($db->userExist($user_id, $user_pass)) {
         session_start();
         $_SESSION["user"] = $login_user;
         $db->close();
-        header("Location: http://10.0.24.13:6006/index.php");
+        header("Location: http://localhost:8000/bookmanagement.com");
         exit;
     } else {
         echo "Failed to find user ".$user_id;
