@@ -1,0 +1,23 @@
+.container{
+    display: grid;
+    grid-template-columns: 20% auto;
+}
+
+header {
+    ul {
+        list-style: none;
+        
+        li {
+            a {
+                text-decoration: none;
+            }
+        }
+    }
+}
+
+.login {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}

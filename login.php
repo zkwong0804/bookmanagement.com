@@ -8,17 +8,23 @@
     <title>Book Management System</title>
 </head>
 <body>
-    <h1>Book management system Login</h1>
-    <div>
-        <form action="./loginAuthenticate.php" method="post">
-            <label for="userid">ID</label>
-            <input type="text" name="userid">
+    <form action="./loginAuthenticate.php" method="post">
+        <div class="login">
+            <h3>Book management system</h3>
+            <div class="input-div">
+                <label for="userid">ID</label>
+                <input type="text" name="userid">
+            </div>
 
-            <label for="userid">Password</label>
-            <input type="text" name="userpass">
+            <div class="input-div">
+                <label for="userid">Password</label>
+                <input type="password" name="userpass">
+            </div>
 
             <input type="submit" value="Login">
-        </form>
-    </div>
+        </div>
+    </form>
+
+    <?php include __DIR__."/scripts.php"?>
 </body>
 </html>

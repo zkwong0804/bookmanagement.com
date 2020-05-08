@@ -1,5 +1,5 @@
 <?php
 session_start();
 unset($_SESSION["user"]);
-header("Location: http://localhost:8000/bookmanagement.com");
+header("Location: http://localhost:8000");
 ?>

@@ -33,7 +33,7 @@ cmForm.onsubmit = function(e) {
 rmForm.onsubmit = function(e) {
     const memID = document.querySelector("#rm-memID").value;
     ajax(
-        "http://10.0.24.13:6006/checkMemberExistence.php", 
+        "http://localhost:8000/checkMemberExistence.php", 
         `memID=${encodeURIComponent(memID)}`
     ).then(result => {
         if (!result.exist) {
@@ -48,7 +48,7 @@ bbForm.onsubmit = function(e) {
     const memID = document.querySelector("#bb-memID").value;
     const memPass = document.querySelector("#bb-memPass").value;
     ajax(
-        "http://10.0.24.13:6006/checkMemberExistence.php",
+        "http://localhost:8000/checkMemberExistence.php",
         `memID=${encodeURIComponent(memID)}&memPass=${encodeURIComponent(memPass)}`
     ).then(result => {   
         if (!result.exist) {
@@ -62,7 +62,7 @@ bbForm.onsubmit = function(e) {
 rbForm.onsubmit = function(e) {
     const returnID = document.querySelector("#rb-returnID").value;
     ajax(
-        "http://10.0.24.13:6006/checkReturnID.php", 
+        "http://localhost:8000/checkReturnID.php", 
         `returnID=${encodeURIComponent(returnID)}`
     ).then(result => {
         if (!result.exist) {
@@ -78,7 +78,7 @@ rbForm.onsubmit = function(e) {
 exForm.onsubmit = function(e) {
     const returnID = document.querySelector("#ex-returnID").value;
     ajax(
-        "http://10.0.24.13:6006/checkReturnID.php",
+        "http://localhost:8000/checkReturnID.php",
         `returnID=${encodeURIComponent(returnID)}`
     ).then(result => {
         console.log(result)
@@ -93,40 +93,28 @@ exForm.onsubmit = function(e) {
 }
 
 ppForm.onsubmit = function(e) {
-    e.preventDefault();
-    const pID = document.querySelector("#penaltyID").value;
-    if (pID === "") {
+    let pList = document.querySelector("#penaltiesList");
+    let pClass = document.querySelector(".pClass:checked");
+    console.log(pClass)
+    if (pList.innerHTML === "" || pClass == null) {
+        e.preventDefault();
         ajax(
-            "http://10.0.24.13:6006/getPenalties.php",
+            "http://localhost:8000/getPenalties.php",
             `memID=${encodeURIComponent(
                 document.querySelector('#pp-memID').value)}`
         ).then(result => {
-            console.log(result);
-            document.querySelector("#penaltiesList")
-                .appendChild(createTable(result.result));
+            pList.innerHTML = "";
+            pList.appendChild(createTable(result.result));
         }).catch(err => alert(err));
-    } else  {
-        console.log(pID)
     }
-    // const penaltyID = document.querySelector("penaltyID").value;
-    // ajax(
-    //     "http://10.0.24.13:6006/checkPenaltyID.php",
-    //     `penaltyID=${encodeURIComponent(penaltyID)}`
-    // ).then(result => {
-    //     if(!result.exist) {
-    //         e.preventDefault();
-    //         alert("Penalty ID is not exist!");
-    //     }
-    // })
-    // .catch(err => alert(err));
 }
 
 function createTable(list) {
     let table = document.createElement("table");
-    table.className = "penaltiesTable";
+    table.className = "penaltiesTable mdl-data-table mdl-js-data-table mdl-shadow--2dp";
     let thr = document.createElement("tr");
     const thList = [
-        "pID", "book", "reason", "fees"
+        "pID", "book", "reason", "fees", ""
     ];
     let txt = null;
     let th = null;
@@ -139,14 +127,47 @@ function createTable(list) {
 
     table.appendChild(thr);
     let tbr = null;
+    let cbCounter = 1;
     for (let e of list) {
-        console.log(e);
         tbr = document.createElement("tr");
         tbr.appendChild(createTD(e.id));
         tbr.appendChild(createTD(e.book));
         tbr.appendChild(createTD(e.reason));
         tbr.appendChild(createTD(e.fees));
+
+        let cbTD = document.createElement("td");
+        let cb = document.createElement("input");
+        cb.type = "checkbox";
+        cb.value = e.id;
+        cb.name = "penalties[]";
+        cb.className= "pClass mdl-checkbox__input";
+        cb.id = "checkbox-"+cbCounter;
+        cb.setAttribute("data-fees", e.fees);
+        cb.onclick = function() {
+            let total = document.querySelector("#totalPenalty");
+            let totalPenalties = 
+                parseFloat(total.getAttribute("data-total"));
+            let fees = parseFloat(cb.getAttribute("data-fees"));
+            let newTotal = (cb.checked) ? 
+                (totalPenalties + fees) : (totalPenalties - fees);
+
+            newTotal = newTotal.toFixed(2);
+
+            total.setAttribute("data-total", newTotal);
+            total.innerHTML = "RM " + newTotal; 
+            console.log(total.getAttribute("data-total"));
+        };
+        let cbLabel = document.createElement("label");
+        let cbSpan = document.createElement("span");
+        cbLabel.className = "mdl-checkbox mdl-js-checkbox mdl-js-ripple-effect";
+        cbLabel.setAttribute("for", "checkbox-"+cbCounter);
+        cbSpan.className = "mdl-checkbox__label";
+        cbLabel.appendChild(cb);
+        cbLabel.appendChild(cbSpan);
+        cbTD.appendChild(cbLabel);
+        tbr.appendChild(cbTD);
         table.appendChild(tbr);
+        cbCounter++;
     }
 
     function createTD(text) {
@@ -155,7 +176,28 @@ function createTable(list) {
         td.appendChild(textNode);
         return td;
     }
+    
+    let totalTR = document.createElement("tr");
 
+    let totalTD = document.createElement("td");
+    let totalHeading = document.createElement("h3");
+    let totalTxt = document.createTextNode("Total");
+
+    let totalTD2 = document.createElement("td");
+    let totalHeading2 = document.createElement("h3");
+    totalHeading2.id = "totalPenalty";
+    totalHeading2.setAttribute("data-total", 0);
+    let totalTxt2 = document.createTextNode("RM 0.00");
+
+
+    totalHeading.appendChild(totalTxt);
+    totalHeading2.appendChild(totalTxt2);
+    totalTD.appendChild(totalHeading);
+    totalTD2.appendChild(totalHeading2);
+    
+    totalTR.appendChild(totalTD);
+    totalTR.appendChild(totalTD2);
+    table.appendChild(totalTR);
     return table;
 }
 

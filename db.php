@@ -211,10 +211,10 @@ class Db {
         $this->checkConnection();
         $q = "SELECT p.id AS 'pID', ".
         "p.reason AS 'reason', p.fees AS 'fees', ".
-        "B.title AS 'book' FROM Penalties p ".
-        "INNER JOIN BorrowedBooks b ON p.record=b.id ".
-        "INNER JOIN Book B ON b.book=B.id ".
-        "WHERE b.borrower='".$memID."' AND p.isPaid=false;";
+        "bo.title AS 'book' FROM Penalties p ".
+        "INNER JOIN BorrowedBooks bb ON p.record=bb.id ".
+        "INNER JOIN Book bo ON bb.book=bo.id ".
+        "WHERE bb.borrower='".$memID."' AND p.isPaid=false;";
         $penalties = [];
         $result = $conn->query($q);
         while($row = $result->fetch_assoc()) {
@@ -227,6 +227,21 @@ class Db {
         }
         $this->close();
         return $penalties;
+    }
+
+    function payPenalties($penalties) {
+        GLOBAL $conn;
+        $success = true;
+        $this->checkConnection();
+        foreach ($penalties as $e) {
+            $q = "UPDATE Penalties SET isPaid=true WHERE id='".$e."';";
+            if($conn->query($q) != 1) {
+                $success = false;
+                break;
+            }
+        }
+
+        return $success;
     }
 }
 ?>

@@ -4,7 +4,7 @@
     if ($db->insertLibrarian(
         $_REQUEST["newLibName"], $_REQUEST["newLibPass"])) {
             $db->close();
-            header("Location: http://localhost:8000/bookmanagement.com");
+            header("Location: http://localhost:8000/");
             exit;
     } else {
         echo "Fail to insert new librarian";
